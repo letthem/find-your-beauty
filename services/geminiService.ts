@@ -121,12 +121,20 @@ const fetchOliveYoungProducts = async (): Promise<OliveYoungItem[]> => {
 };
 
 /**
- * Generates a makeup look based on the uploaded image.
+ * Generates a makeup look based on the uploaded image and user's request.
  */
-export const generateMakeupLook = async (imageBase64: string): Promise<string> => {
+export const generateMakeupLook = async (imageBase64: string, userRequest: string = ""): Promise<string> => {
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    
+
+    // Build the prompt based on user request
+    let prompt = '';
+    if (userRequest.trim()) {
+      prompt = `Apply makeup to this person based on the following request: "${userRequest}". Make sure the makeup style matches their request (e.g., if they ask for cool-tone pink lipstick, apply cool-tone pink lips; if they ask for natural look, apply light natural makeup). Keep the facial structure and identity identical, only apply virtual makeup. Photorealistic, 8k resolution.`;
+    } else {
+      prompt = 'Apply a sophisticated, high-fashion K-beauty makeup look to this person. Enhance skin texture to be glass-like, add soft coral-pink blush, defined eyeliner, and a gradient lip tint. Keep the facial structure identity identical, only apply virtual makeup. Photorealistic, 8k resolution.';
+    }
+
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: {
@@ -138,7 +146,7 @@ export const generateMakeupLook = async (imageBase64: string): Promise<string> =
             },
           },
           {
-            text: 'Apply a sophisticated, high-fashion K-beauty makeup look to this person. Enhance skin texture to be glass-like, add soft coral-pink blush, defined eyeliner, and a gradient lip tint. Keep the facial structure identity identical, only apply virtual makeup. Photorealistic, 8k resolution.',
+            text: prompt,
           },
         ],
       },
@@ -149,7 +157,7 @@ export const generateMakeupLook = async (imageBase64: string): Promise<string> =
         return part.inlineData.data;
       }
     }
-    
+
     throw new Error("No image generated.");
   } catch (error) {
     console.error("Error generating look:", error);
@@ -160,11 +168,11 @@ export const generateMakeupLook = async (imageBase64: string): Promise<string> =
 /**
  * Analyzes the image and selects matching products from Olive Young's best sellers.
  */
-export const searchProducts = async (imageBase64: string): Promise<{ products: Product[], description: string }> => {
+export const searchProducts = async (imageBase64: string, userRequest: string = ""): Promise<{ products: Product[], description: string }> => {
   try {
     // 1. Fetch real product data first
     const availableProducts = await fetchOliveYoungProducts();
-    
+
     // Fallback if API completely fails (should not happen due to fallback data)
     if (availableProducts.length === 0) {
       throw new Error("No products available");
@@ -187,7 +195,7 @@ export const searchProducts = async (imageBase64: string): Promise<{ products: P
       3. Select exactly 4 products from this list that would best create a "Glass Skin" or trendy K-Beauty look for this specific user.
       4. For each selected product, provide a persuasive and specific reason why it fits this user's generated look.
       5. Return a JSON object.
-      
+
       AVAILABLE PRODUCTS JSON:
       ${JSON.stringify(productListContext)}
 

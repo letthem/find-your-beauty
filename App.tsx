@@ -26,6 +26,7 @@ const App: React.FC = () => {
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [isCameraMode, setIsCameraMode] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [userRequest, setUserRequest] = useState<string>("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -172,10 +173,10 @@ const App: React.FC = () => {
       // Split base64 header
       const base64Data = state.originalImage.split(",")[1];
 
-      // Run parallel requests: Visual Generation & Product Search
+      // Run parallel requests: Visual Generation & Product Search with user request
       const [generatedImgB64, productData] = await Promise.all([
-        generateMakeupLook(base64Data),
-        searchProducts(base64Data),
+        generateMakeupLook(base64Data, userRequest),
+        searchProducts(base64Data, userRequest),
       ]);
 
       setState((prev) => ({
@@ -252,8 +253,8 @@ const App: React.FC = () => {
             </span>
           </h1>
           <p className="max-w-2xl text-gray-400 text-lg leading-relaxed">
-            Upload your photo to discover a personalized K-Beauty look and get
-            matched with real products from Global Olive Young.
+            Upload your photo and describe your desired makeup style. Get personalized product recommendations
+            and see how you'd look with those products applied!
           </p>
         </header>
 
@@ -352,6 +353,28 @@ const App: React.FC = () => {
                       <RefreshCw size={16} />
                     </button>
                   </div>
+
+                  {/* User Request Input */}
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="user-request"
+                      className="block text-sm font-medium text-gray-300 text-left"
+                    >
+                      What kind of makeup look would you like? (Optional)
+                    </label>
+                    <input
+                      id="user-request"
+                      type="text"
+                      value={userRequest}
+                      onChange={(e) => setUserRequest(e.target.value)}
+                      placeholder="e.g., Cool-tone pink lipstick, natural everyday look, dewy glass skin..."
+                      className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon-500 focus:ring-1 focus:ring-neon-500 transition-colors"
+                    />
+                    <p className="text-xs text-gray-500 text-left">
+                      Describe your desired makeup style, products, or skin tone preferences
+                    </p>
+                  </div>
+
                   <Button onClick={handleProcess} className="w-full text-lg">
                     Generate My Look <Sparkles className="ml-2" size={18} />
                   </Button>
